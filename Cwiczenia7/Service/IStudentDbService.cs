@@ -22,5 +22,7 @@ namespace Cwiczenia7.Service
             string indexNumber, string firstName, string lastName, DateTime birthDate, string studiesName);
         public Enrollment GetEnrollment(int idEnrollment);
         public Enrollment SemesterPromotion(int idStudy, int semester);
+
+        public Enrollment GetEnrollment(int idStudy, int semester);
     }
 }

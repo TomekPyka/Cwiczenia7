@@ -8,9 +8,14 @@ namespace Cwiczenia7.Model
 {
     public class Studies
     {
-        [Required]
+        public Studies()
+        {
+            Enrollments = new HashSet<Enrollment>();
+        }
+
         public int IdStudy { get; set; }
-        [Required]
         public string Name { get; set; }
+
+        public virtual ICollection<Enrollment> Enrollments { get; set; }
     }
 }

@@ -11,6 +11,7 @@ namespace Cwiczenia7.Service
 {
     public class SQLServerStudentDbService : IStudentDbService
     {
+        private readonly SqlServerStudentDbContext _dbContext;
         private readonly string connectionString = "Data Source=PC-KOMPUTER;Initial Catalog=s12343;Integrated Security=True";
         private SqlConnection SqlConnection => new SqlConnection(connectionString);
 
@@ -54,20 +55,26 @@ namespace Cwiczenia7.Service
         }
         public int CreateStudent(Student student)
         {
-            using var connection = SqlConnection;
-            using var command = new SqlCommand
+            if (_dbContext.Student.Where(s => string.Equals(s.IndexNumber, student.IndexNumber))
+                .FirstOrDefault() != null)
+                return 0;
+            _dbContext.Student.Add(student);
+            if (student.Password == null || student.Salt == null)
             {
-                Connection = connection,
-                CommandText = "INSERT INTO Student " +
-                "VALUES(@indexNumber, @firstName, @lastName, @birthDate, @idEnrollment)"
-            };
-            command.Parameters.AddWithValue("indexNumber", student.IndexNumber);
-            command.Parameters.AddWithValue("firstName", student.FirstName);
-            command.Parameters.AddWithValue("lastName", student.LastName);
-            command.Parameters.AddWithValue("birthDate", student.BirthDate);
-            command.Parameters.AddWithValue("idEnrollment", student.IdEnrollment);
-            connection.Open();
-            return command.ExecuteNonQuery();
+                byte[] randomBytes = new Byte[16];
+                RandomNumberGenerator.Create().GetNonZeroBytes(randomBytes);
+                student.Salt = Convert.ToBase64String(new HMACSHA512().ComputeHash(randomBytes));
+                student.Password = Convert.ToBase64String(
+                        KeyDerivation.Pbkdf2(
+                            password: "defaultPassword2020",
+                            salt: Encoding.UTF8.GetBytes(student.Salt),
+                            prf: KeyDerivationPrf.HMACSHA512,
+                            iterationCount: 10000,
+                            numBytesRequested: 256 / 8
+                        )
+                    );
+            }
+            return _dbContext.SaveChanges();
         }
 
         public int UpdateStudent(string indexNumber, Student student)
